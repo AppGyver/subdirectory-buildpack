@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir> <env-dir>
+
+set -o errexit    # always exit on error
+set -o pipefail   # don't ignore exit codes when piping output
+set -o nounset    # fail on unset variables
+
+BUILD_DIR=${1:-}
+# CACHE_DIR=${2:-}
+# ENV_DIR=${3:-}
+TMP_DIR=$(mktemp -d)/tmp
+if [ -z "$BUILD_DIR" ]
+then
+    echo "Usage: $0 <build-dir>"
+    exit 1
+fi
+
+# Find a package.json with a depth between 2 and 3 (either 1 folder or 2 folders deep)
+PACKAGE_JSON_PATH=$(find $BUILD_DIR -type d \( -name node_modules \) -prune -false -o -name package.json -mindepth 2 -maxdepth 3 | head -n 1)
+if [ -z "$PACKAGE_JSON_PATH" ]
+then
+    echo "Could not find a sub-directory"
+else
+    SOURCE_DIR=$(dirname $PACKAGE_JSON_PATH)
+    # Move the subdirectory to the temporary directory
+    echo "Moving the subdirectory $SOURCE_DIR to a temporary directory..."
+    mv $SOURCE_DIR $TMP_DIR
+    # Remove contents of the build directory, ignoring hidden files
+    echo "Removing remaining contents of the build directory..."
+    rm -rf $BUILD_DIR/*
+    # Move the contents from the temporary folder to the root build directory, including hidden files
+    echo "Moving contents from the temporary directory to the build directory..."
+    shopt -s dotglob nullglob
+    mv -f $TMP_DIR/* $BUILD_DIR/
+fi

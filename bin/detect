@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "AppGyver/subdirectory-buildpack"
+exit 0
